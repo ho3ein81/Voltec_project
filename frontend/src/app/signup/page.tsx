@@ -28,7 +28,7 @@ export default function SignupPage() {
     process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:8000";
 
   const SIGNUP_PATH =
-    process.env.NEXT_PUBLIC_SIGNUP_PATH ?? "/api/accounts/signup/";
+    process.env.NEXT_PUBLIC_SIGNUP_PATH ?? "/accounts/signup/";
 
   const handleChange = (field: string, value: string) => {
     setForm({
@@ -74,7 +74,8 @@ export default function SignupPage() {
         data = null;
       }
 
-      if (res.status !== 200) {
+      if (res.status !== 200 && res.status !== 201) {
+
         const backendError =
           data?.error || data?.detail || data?.message || "خطا در ثبت نام";
 

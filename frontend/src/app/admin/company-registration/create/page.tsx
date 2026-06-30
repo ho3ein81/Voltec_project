@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from "@/app/components/ui/card";
 import { useRouter } from "next/navigation";
-import api from "../components/lib/api";
+import api from "../../../components/lib/api";
 
 interface Province {
   id: number;
@@ -34,13 +34,13 @@ const fetchAllPaginated = async <T,>(url: string): Promise<T[]> => {
   let nextUrl: string | null = url;
 
   while (nextUrl !== null) {
-    const res: Response = await api(nextUrl);
+    const res: any = await api.get(nextUrl);
 
-    if (!res.ok) {
+    if (res.status !== 200) {
       throw new Error(`Request failed with status ${res.status}`);
     }
 
-    const data: PaginatedResponse<T> | T[] = await res.json();
+    const data: PaginatedResponse<T> | T[] = await res.data;
 
     if (Array.isArray(data)) {
       results = [...results, ...data];
@@ -146,9 +146,10 @@ export default function CreateProjectPage() {
       const data = await res.data;
       console.log("API Response:", data);
 
-      if (res.status !== 200) {
-        router.push("/dashboard/projects");
-      }
+     if (res.status !== 200) {
+  router.push("/dashboard/projects/user-list");
+}
+  
     } catch (error) {
       console.error("Error:", error);
     }

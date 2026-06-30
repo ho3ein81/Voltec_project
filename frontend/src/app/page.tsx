@@ -37,8 +37,14 @@ export default function Home() {
             <Button variant="secondary" size="lg">ایجاد حساب کاربری</Button>
           </Link>
 
-           <Link href="/company-registration">
+           <Link href="/admin/company-registration/create">
   <Button size="lg">ثبت شرکت ها</Button>
+</Link>
+
+<Link href="/invite">
+  <Button variant="secondary" size="lg">
+    ورود با کد دعوت
+  </Button>
 </Link>
 
 

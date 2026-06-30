@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Vazirmatn } from "next/font/google";
 import "./globals.css";
+import { CompanyProvider } from "@/app/components/company/company-provider"; 
 
 import { ToastProvider, ToastViewport } from "@/app/components/ui/toast";
 
@@ -22,6 +23,7 @@ export default function RootLayout({
   return (
     <html lang="fa" dir="rtl">
       <body className={`${vazirmatn.variable} font-sans antialiased`}>
+       <CompanyProvider>
         <ToastProvider>
           {children}
 
@@ -33,6 +35,8 @@ export default function RootLayout({
 
           />
         </ToastProvider>
+</CompanyProvider>
+        
       </body>
     </html>
   );

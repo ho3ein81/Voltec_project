@@ -1,20 +1,15 @@
+// src/app/dashboard/layout.tsx
 "use client";
 
 import { AppShell } from "../components/layout/app-shell";
-import { CompanyProvider } from "../components/company/company-provider";
-import  CompanySelectorModal  from "../components/company/company-selector-modal";
+import CompanySelectorModal from "../components/company/company-selector-modal";
 
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  // دیگر نیازی به CompanyProvider اینجا نیست چون در RootLayout است
   return (
-    <CompanyProvider>
-      <AppShell>
-        {children}
-        <CompanySelectorModal />
-      </AppShell>
-    </CompanyProvider>
+    <AppShell>
+      {children}
+      <CompanySelectorModal />
+    </AppShell>
   );
 }

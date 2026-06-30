@@ -1,5 +1,4 @@
-
-"use client"
+"use client";
 
 import React, {
   createContext,
@@ -7,124 +6,100 @@ import React, {
   useEffect,
   useMemo,
   useState,
-} from "react"
+} from "react";
 
 import type {
   JoinCompany,
   MyCompaniesResponseItem,
-} from "./company-types"
+} from "./company-types";
 
 import {
   clearActiveCompany,
   getActiveCompany,
   saveActiveCompany,
-} from "./company-storage"
+} from "./company-storage";
 
-import api from "@/app/components/lib/api"
+import api from "@/app/components/lib/api";
 
 type PaginatedCompaniesResponse = {
-  count: number
-  next: string | null
-  previous: string | null
-  results: MyCompaniesResponseItem[]
-}
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: MyCompaniesResponseItem[];
+};
 
 type CompanyContextType = {
-  companies: MyCompaniesResponseItem[]
-  activeCompany: JoinCompany | null
-  setActiveCompany: (company: JoinCompany | null) => void
-  refreshCompanies: () => Promise<void>
-  loading: boolean
-}
+  companies: MyCompaniesResponseItem[];
+  activeCompany: JoinCompany | null;
+  setActiveCompany: (company: JoinCompany | null) => void;
+  refreshCompanies: () => Promise<void>;
+  loading: boolean;
+};
 
-const CompanyContext = createContext<CompanyContextType | undefined>(
-  undefined
-)
+const CompanyContext = createContext<CompanyContextType | undefined>(undefined);
 
-export function CompanyProvider({
-  children,
-}: {
-  children: React.ReactNode
-}) {
-  const [companies, setCompanies] = useState<MyCompaniesResponseItem[]>([])
-
-  const [activeCompany, setActiveCompanyState] =
-    useState<JoinCompany | null>(null)
-
-  const [loading, setLoading] = useState(true)
+export function CompanyProvider({ children }: { children: React.ReactNode }) {
+  const [companies, setCompanies] = useState<MyCompaniesResponseItem[]>([]);
+  const [activeCompany, setActiveCompanyState] = useState<JoinCompany | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [isMounted, setIsMounted] = useState(false);
 
   const setActiveCompany = (company: JoinCompany | null) => {
-    setActiveCompanyState(company)
+    setActiveCompanyState(company);
 
     if (company) {
-      saveActiveCompany(company)
+      saveActiveCompany(company);
     } else {
-      clearActiveCompany()
+      clearActiveCompany();
     }
-  }
+  };
 
   const refreshCompanies = async () => {
-    setLoading(true)
+    // اگر در کلاینت نیستیم، اجرا نشود
+    if (typeof window === "undefined") return;
 
+    setLoading(true);
     try {
-      const res = await api.get("/tenants/")
+      const res = await api.get("/tenants/");
+      const data: PaginatedCompaniesResponse = res.data;
+      const companiesList = data.results || [];
 
-      // ✅ API paginated response
-      const data: PaginatedCompaniesResponse = res.data
+      setCompanies(companiesList);
 
-      // ✅ فقط آرایه شرکت‌ها
-      const companiesList = data.results || []
+      const cachedCompany = getActiveCompany();
 
-      setCompanies(companiesList)
-
-      const cachedCompany = getActiveCompany()
-
-      // ✅ اگر شرکت cache شده وجود داشت
       if (cachedCompany) {
-        const exists = companiesList.find(
-          (item) => item.id === cachedCompany.id
-        )
+        const exists = companiesList.find((item) => item.id === cachedCompany.id);
 
         if (exists) {
-          setActiveCompanyState(exists as JoinCompany)
+          setActiveCompanyState(exists as JoinCompany);
         } else if (companiesList.length > 0) {
-          // ✅ اگر cache invalid بود اولین شرکت را انتخاب کن
-          const firstCompany = companiesList[0]
-
-          setActiveCompanyState(firstCompany as JoinCompany)
-
-          saveActiveCompany(firstCompany as JoinCompany)
+          const firstCompany = companiesList[0];
+          setActiveCompanyState(firstCompany as JoinCompany);
+          saveActiveCompany(firstCompany as JoinCompany);
         } else {
-          setActiveCompanyState(null)
+          setActiveCompanyState(null);
         }
-      }
-
-      // ✅ اگر cache وجود نداشت
-      else if (companiesList.length > 0) {
-        const firstCompany = companiesList[0]
-
-        setActiveCompanyState(firstCompany as JoinCompany)
-
-        saveActiveCompany(firstCompany as JoinCompany)
-      }
-
-      // ✅ اگر هیچ شرکتی نبود
-      else {
-        setActiveCompanyState(null)
+      } else if (companiesList.length > 0) {
+        const firstCompany = companiesList[0];
+        setActiveCompanyState(firstCompany as JoinCompany);
+        saveActiveCompany(firstCompany as JoinCompany);
+      } else {
+        setActiveCompanyState(null);
       }
     } catch (error) {
-      console.error("Company load error:", error)
-
-      setCompanies([])
-      setActiveCompanyState(null)
+      console.error("Company load error:", error);
+      setCompanies([]);
+      setActiveCompanyState(null);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
-    refreshCompanies()
-  }, [])
+    setIsMounted(true);
+    refreshCompanies();
+  }, []);
 
   const value = useMemo(
     () => ({
@@ -132,26 +107,25 @@ export function CompanyProvider({
       activeCompany,
       setActiveCompany,
       refreshCompanies,
-      loading,
+      // اگر هنوز مونت نشده باشد، لودینگ را true برگردان تا UI در حالت SSR به مشکل نخورد
+      loading: !isMounted || loading,
     }),
-    [companies, activeCompany, loading]
-  )
+    [companies, activeCompany, loading, isMounted]
+  );
 
   return (
     <CompanyContext.Provider value={value}>
       {children}
     </CompanyContext.Provider>
-  )
+  );
 }
 
 export function useCompany() {
-  const ctx = useContext(CompanyContext)
+  const ctx = useContext(CompanyContext);
 
   if (!ctx) {
-    throw new Error(
-      "useCompany must be used inside CompanyProvider"
-    )
+    throw new Error("useCompany must be used inside CompanyProvider");
   }
 
-  return ctx
+  return ctx;
 }

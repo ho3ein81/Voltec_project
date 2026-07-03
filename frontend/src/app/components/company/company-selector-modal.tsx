@@ -28,13 +28,16 @@ export default function CompanySelectorModal() {
   const [selectedId, setSelectedId] =
     useState<number | null>(null)
 
-  useEffect(() => {
-    if (!loading && (!activeCompany || !companies?.length)) {
-      setOpen(true)
-    } else {
-      setOpen(false)
-    }
-  }, [loading, activeCompany, companies])
+ useEffect(() => {
+  if (loading) return
+
+  if (!activeCompany && companies.length > 0) {
+    setOpen(true)
+  } else {
+    setOpen(false)
+  }
+}, [loading, activeCompany, companies])
+
 
   const selectCompany = async (
     item: MyCompaniesResponseItem
@@ -80,7 +83,7 @@ export default function CompanySelectorModal() {
         {/* Header */}
         <div className="mb-5">
           <div className="mb-2 flex items-center gap-2">
-            <Building2 className="h-5 w-5 text-emerald-400" />
+            <Building2 className="h-5 w-5 text-[#f5b700]" />
 
             <h2 className="text-lg font-semibold">
               انتخاب شرکت
@@ -111,7 +114,7 @@ export default function CompanySelectorModal() {
                 >
                   <div className="flex items-center gap-3">
                     
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#f5b700]/10 text-[#f5b700]">
                       <Building2 className="h-5 w-5" />
                     </div>
 
@@ -132,7 +135,7 @@ export default function CompanySelectorModal() {
                         <span
                           className={
                             item.status === "فعال"
-                              ? "text-emerald-400"
+                              ? "text-[#f5b700]"
                               : "text-red-400"
                           }
                         >
@@ -146,7 +149,7 @@ export default function CompanySelectorModal() {
                     {isLoading ? (
                       <Loader2 className="h-4 w-4 animate-spin text-zinc-300" />
                     ) : isActive ? (
-                      <Check className="h-4 w-4 text-emerald-400" />
+                      <Check className="h-4 w-4 text-[#f5b700]" />
                     ) : null}
                   </div>
                 </button>
@@ -155,7 +158,7 @@ export default function CompanySelectorModal() {
           ) : (
             <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.02] px-4 py-8 text-center">
               
-              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-400">
+              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#f5b700]/10 text-[#f5b700]">
                 <Building2 className="h-7 w-7" />
               </div>
 
@@ -173,7 +176,7 @@ export default function CompanySelectorModal() {
                 {/* Register Company */}
                 <Link
                   href="/"
-                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-3 text-sm font-medium text-black transition hover:bg-emerald-400"
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#f5b700] px-4 py-3 text-sm font-medium text-black transition hover:bg-[#e0a600]"
                 >
                   <Plus className="h-4 w-4" />
 

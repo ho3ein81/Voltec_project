@@ -92,6 +92,7 @@ export default function LoginPage() {
       localStorage.setItem("user_national_id", user_national_id);
       localStorage.setItem("first_name", first_name);
       localStorage.setItem("last_name", last_name);
+      window.dispatchEvent(new Event("storage"));
 
       router.push("/dashboard");
     } catch (err) {

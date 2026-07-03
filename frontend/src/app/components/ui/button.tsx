@@ -2,7 +2,9 @@ import * as React from "react";
 import { cn } from "@/app/components/lib/utils";
 
 type ButtonVariant = "primary" | "secondary" | "dark" | "ghost" | "danger";
-type ButtonSize = "sm" | "md" | "lg";
+
+// اضافه شد: "icon"
+type ButtonSize = "sm" | "md" | "lg" | "icon";
 
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -23,10 +25,16 @@ const variantClasses: Record<ButtonVariant, string> = {
     "bg-[var(--error)] text-white border border-transparent hover:opacity-90",
 };
 
+// اضافه شد: icon
 const sizeClasses: Record<ButtonSize, string> = {
   sm: "h-9 px-3 text-sm rounded-xl",
   md: "h-11 px-4 text-sm rounded-xl",
   lg: "h-12 px-5 text-base rounded-2xl",
+
+  // اندازه استاندارد برای دکمه‌های آیکونی
+  icon: "h-10 w-10 p-0 rounded-xl", 
+  // اگر خواستی بزرگ‌تر شود:
+  // icon: "h-11 w-11 p-0 rounded-xl",
 };
 
 export function Button({

@@ -78,7 +78,8 @@ export function Topbar() {
   };
 
   return (
-    <header className="flex h-16 items-center justify-between border-b border-[var(--border)] bg-[var(--surface)] px-6">
+    <header className="flex h-16 items-center justify-between border-b border-[var(--border)] bg-[var(--surface)] px-6 relative z-[200]">
+
       <div className="flex items-center gap-3">
         <h1 className="text-lg font-bold text-[var(--text-primary)]">
           داشبورد
@@ -150,7 +151,7 @@ export function Topbar() {
                           (e.currentTarget.style.background = "transparent")
                         }
                       >
-                        لیست شرکت‌های من
+                      ثبت شرکت‌های من 
                       </Link>
                     </li>
 

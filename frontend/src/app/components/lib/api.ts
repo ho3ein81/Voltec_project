@@ -4,7 +4,6 @@ const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000/api",
 });
 
-
 // افزودن access token به درخواست‌ها
 api.interceptors.request.use(
   (config) => {
@@ -30,21 +29,21 @@ api.interceptors.response.use(
         const refreshToken = localStorage.getItem("refresh_token");
 
         const res = await axios.post(
-          "http://127.0.0.1:8000/api/accounts/refresh_token/",   // ✅ اصلاح شد
+          "http://127.0.0.1:8000/api/accounts/refresh_token/", // ✅ اصلاح شد
           {
             refresh: refreshToken,
-          }
+          },
         );
 
         if (res.status === 200) {
           const newAccessToken = res.data.access;
+          const newRefreshToken = res.data.refresh;
 
           localStorage.setItem("access_token", newAccessToken);
+          localStorage.setItem("refresh_token", newRefreshToken);
 
-          originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
           return api(originalRequest);
         }
-
       } catch (refreshError) {
         localStorage.clear();
         window.location.href = "/login";
@@ -53,7 +52,7 @@ api.interceptors.response.use(
     }
 
     return Promise.reject(error);
-  }
+  },
 );
 
 export default api;

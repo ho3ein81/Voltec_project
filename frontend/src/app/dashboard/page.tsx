@@ -1,6 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useState, useEffect } from "react";
+import { useCompany } from "@/app/components/company/company-provider";
+import api from "@/app/components/lib/api";
 import {
   AlertCircle,
   ArrowDownRight,
@@ -319,6 +322,39 @@ function DesktopFinancialBarChart({ data }: { data: MonthlyTrend[] }) {
 }
 
 export default function DashboardPage() {
+  const { activeCompany } = useCompany();
+  const [membersCount, setMembersCount] = useState<number | null>(null);
+  const [loadingMembers, setLoadingMembers] = useState(false);
+
+  // دریافت پویای تعداد اعضای شرکت فعال
+  useEffect(() => {
+    const fetchActiveCompanyMembers = async () => {
+      if (!activeCompany?.id) return;
+      setLoadingMembers(true);
+      try {
+        const response = await api.get(`/tenants/members/${activeCompany.id}/`);
+        const data = response.data;
+        
+        // محاسبه طول آرایه دریافتی بر اساس ساختار خروجی API
+        let count = 0;
+        if (Array.isArray(data)) {
+          count = data.length;
+        } else if (Array.isArray(data?.results)) {
+          count = data.results.length;
+        } else if (Array.isArray(data?.members)) {
+          count = data.members.length;
+        }
+        setMembersCount(count);
+      } catch (error) {
+        console.error("Error fetching active company members count:", error);
+      } finally {
+        setLoadingMembers(false);
+      }
+    };
+
+    fetchActiveCompanyMembers();
+  }, [activeCompany]);
+
   return (
     <div className="flex flex-col gap-6 bg-[var(--background)] p-4 text-[var(--foreground)] sm:p-6 md:p-8">
       <header className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
@@ -427,6 +463,7 @@ export default function DashboardPage() {
 
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
+              {/* بخش تیم فنی (بدون تغییر و ثابت) */}
               <div className="rounded-xl bg-[var(--surface-soft)] p-4 text-center">
                 <p className="text-2xl font-bold text-[var(--text-primary)]">
                   ۱۲
@@ -436,22 +473,30 @@ export default function DashboardPage() {
                 </p>
               </div>
 
-              <div className="rounded-xl bg-[var(--surface-soft)] p-4 text-center">
-                <p className="text-2xl font-bold text-[var(--text-primary)]">
-                  ۴
-                </p>
+              {/* بخش اداری (نمایش تعداد پویای اعضا / کارمندان شرکت) */}
+              <div className="rounded-xl bg-[var(--surface-soft)] p-4 text-center flex flex-col justify-center items-center">
+                {loadingMembers ? (
+                  <div className="h-6 w-6 my-1 animate-spin rounded-full border-2 border-[var(--brand)] border-t-transparent" />
+                ) : (
+                  <p className="text-2xl font-bold text-[var(--text-primary)]">
+                    {membersCount !== null ? membersCount : "—"}
+                  </p>
+                )}
                 <p className="mt-1 text-xs text-[var(--text-muted)]">
-                  بخش اداری
+                  تعداد کارمندان
                 </p>
               </div>
             </div>
 
-           <Button
-              variant="secondary" // تغییر از outline به secondary که در پروژه تعریف شده است
-  className="w-full border-[var(--border)] text-[var(--text-primary)] hover:bg-[var(--brand-soft)] hover:text-[var(--brand-hover)] transition-colors"
->
-  مدیریت اعضا
-</Button>
+           <Link href="/dashboard/members" className="w-full">
+  <Button
+    variant="secondary"
+    className="w-full border-[var(--border)] text-[var(--text-primary)] hover:bg-[var(--brand-soft)] hover:text-[var(--brand-hover)] transition-colors"
+  >
+    مدیریت اعضا
+  </Button>
+</Link>
+
 
           </CardContent>
         </Card>

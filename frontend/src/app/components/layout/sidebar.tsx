@@ -6,6 +6,7 @@ import { Badge } from "../ui/badge";
 
 const menu = [
   { name: "داشبورد", href: "/dashboard" },
+  { name: "لیست شرکت‌های من", href: "/dashboard/companies" },
   { name: "پروژه‌ها", href: "/dashboard/projects" },
   { name: "قراردادها", href: "/dashboard/contracts" },
   { name: "صورت وضعیت‌ها", href: "/dashboard/invoices" },

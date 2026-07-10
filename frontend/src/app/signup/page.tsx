@@ -21,6 +21,7 @@ export default function SignupPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [isFocused, setIsFocused] = useState<string | null>(null);
 
@@ -30,34 +31,59 @@ export default function SignupPage() {
   const SIGNUP_PATH =
     process.env.NEXT_PUBLIC_SIGNUP_PATH ?? "/accounts/signup/";
 
+  // تابع کمکی برای ترجمه و بومی‌سازی پیام‌های خطای سرور
+  const customizeErrorMessage = (key: string, rawMessage: string): string => {
+    if (key === "national_id" && rawMessage.includes("already exists")) {
+      return "این کد ملی قبلاً در سامانه ثبت شده است. اگر قبلاً ثبت‌نام کرده‌اید، وارد شوید.";
+    }
+    return rawMessage;
+  };
+
   const handleChange = (field: string, value: string) => {
     setForm({
       ...form,
       [field]: value,
     });
+    // پاک کردن خطای اختصاصی فیلد هنگام تایپ مجدد
+    if (fieldErrors[field]) {
+      setFieldErrors((prev) => {
+        const copy = { ...prev };
+        delete copy[field];
+        return copy;
+      });
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setFieldErrors({});
+
+    const localErrors: Record<string, string> = {};
 
     if (!/^\d{10}$/.test(form.national_id)) {
-      setError("کد ملی باید دقیقاً ۱۰ رقم باشد");
-      return;
+      localErrors.national_id =
+        "کد ملی باید دقیقاً ۱۰ رقم باشد. لطفاً دوباره بررسی کنید.";
     }
 
     if (!/^09\d{9}$/.test(form.phone)) {
-      setError("شماره موبایل معتبر نیست");
-      return;
+      localErrors.phone =
+        "فرمت شماره موبایل صحیح نیست (مثال: 09123456789).";
     }
 
-    if (form.password.length < 6) {
-      setError("رمز عبور باید حداقل ۶ کاراکتر باشد");
-      return;
+    if (form.password.length < 8) {
+      localErrors.password =
+        "رمز عبور باید حداقل ۸ کاراکتر باشد (پیشنهاد: ترکیبی از حروف و اعداد).";
     }
 
     if (form.password !== form.confirm_password) {
-      setError("رمز عبور و تکرار آن یکسان نیست");
+      localErrors.confirm_password =
+        "تکرار رمز عبور با رمز عبور مطابقت ندارد. لطفاً یکسان وارد کنید.";
+    }
+
+    // اگر خطای محلی وجود داشت، فرم ارسال نشود
+    if (Object.keys(localErrors).length > 0) {
+      setFieldErrors(localErrors);
       return;
     }
 
@@ -75,17 +101,64 @@ export default function SignupPage() {
       }
 
       if (res.status !== 200 && res.status !== 201) {
-
-        const backendError =
-          data?.error || data?.detail || data?.message || "خطا در ثبت نام";
-
-        setError(backendError);
+        // هندل کردن خطاهای ارسالی از سریالایزر جنگو (شکل دیکشنری مانند { national_id: ["..."] })
+        if (
+          data &&
+          typeof data === "object" &&
+          !data.error &&
+          !data.detail &&
+          !data.message
+        ) {
+          const formattedErrors: Record<string, string> = {};
+          Object.keys(data).forEach((key) => {
+            let rawMsg = "";
+            if (Array.isArray(data[key])) {
+              rawMsg = data[key][0];
+            } else if (typeof data[key] === "string") {
+              rawMsg = data[key];
+            }
+            formattedErrors[key] = customizeErrorMessage(key, rawMsg);
+          });
+          setFieldErrors(formattedErrors);
+        } else {
+          const backendError =
+            data?.error ||
+            data?.detail ||
+            data?.message ||
+            "ثبت‌نام ناموفق بود. لطفاً اطلاعات را بررسی کرده و دوباره تلاش کنید.";
+          setError(backendError);
+        }
         return;
       }
 
       router.push("/login");
-    } catch (err) {
-      setError("ارتباط با سرور برقرار نشد");
+    } catch (err: any) {
+      // بررسی خطاهای پاسخ سرور در بلاک catch (زمانی که Axios خطا پرتاب می‌کند)
+      if (err.response && err.response.data) {
+        const data = err.response.data;
+        if (
+          typeof data === "object" &&
+          !data.error &&
+          !data.detail &&
+          !data.message
+        ) {
+          const formattedErrors: Record<string, string> = {};
+          Object.keys(data).forEach((key) => {
+            let rawMsg = "";
+            if (Array.isArray(data[key])) {
+              rawMsg = data[key][0];
+            } else if (typeof data[key] === "string") {
+              rawMsg = data[key];
+            }
+            formattedErrors[key] = customizeErrorMessage(key, rawMsg);
+          });
+          setFieldErrors(formattedErrors);
+          return;
+        }
+      }
+      setError(
+        "در حال حاضر ارتباط با سرور برقرار نشد. لطفاً اینترنت/سرور را بررسی کرده و دوباره تلاش کنید."
+      );
     } finally {
       setIsLoading(false);
     }
@@ -179,14 +252,26 @@ export default function SignupPage() {
                 style={{
                   height: "46px",
                   borderRadius: "10px",
-                  border:
-                    isFocused === field.name
-                      ? "1px solid var(--brand)"
-                      : "1px solid var(--border)",
+                  border: fieldErrors[field.name]
+                    ? "1px solid var(--error)"
+                    : isFocused === field.name
+                    ? "1px solid var(--brand)"
+                    : "1px solid var(--border)",
                   padding: "0 16px",
                   background: "var(--surface-soft)",
                 }}
               />
+              {fieldErrors[field.name] && (
+                <span
+                  style={{
+                    color: "var(--error)",
+                    fontSize: "11px",
+                    marginTop: "2px",
+                  }}
+                >
+                  {fieldErrors[field.name]}
+                </span>
+              )}
             </div>
           ))}
 
@@ -204,10 +289,11 @@ export default function SignupPage() {
                   width: "100%",
                   height: "46px",
                   borderRadius: "10px",
-                  border:
-                    isFocused === "password"
-                      ? "1px solid var(--brand)"
-                      : "1px solid var(--border)",
+                  border: fieldErrors.password
+                    ? "1px solid var(--error)"
+                    : isFocused === "password"
+                    ? "1px solid var(--brand)"
+                    : "1px solid var(--border)",
                   padding: "0 40px 0 16px",
                 }}
               />
@@ -260,6 +346,17 @@ export default function SignupPage() {
                 )}
               </button>
             </div>
+            {fieldErrors.password && (
+              <span
+                style={{
+                  color: "var(--error)",
+                  fontSize: "11px",
+                  marginTop: "2px",
+                }}
+              >
+                {fieldErrors.password}
+              </span>
+            )}
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
@@ -278,10 +375,11 @@ export default function SignupPage() {
                   width: "100%",
                   height: "46px",
                   borderRadius: "10px",
-                  border:
-                    isFocused === "confirm_password"
-                      ? "1px solid var(--brand)"
-                      : "1px solid var(--border)",
+                  border: fieldErrors.confirm_password
+                    ? "1px solid var(--error)"
+                    : isFocused === "confirm_password"
+                    ? "1px solid var(--brand)"
+                    : "1px solid var(--border)",
                   padding: "0 40px 0 16px",
                 }}
               />
@@ -334,6 +432,17 @@ export default function SignupPage() {
                 )}
               </button>
             </div>
+            {fieldErrors.confirm_password && (
+              <span
+                style={{
+                  color: "var(--error)",
+                  fontSize: "11px",
+                  marginTop: "2px",
+                }}
+              >
+                {fieldErrors.confirm_password}
+              </span>
+            )}
           </div>
 
           {error && (
@@ -364,7 +473,7 @@ export default function SignupPage() {
               cursor: isLoading ? "not-allowed" : "pointer",
             }}
           >
-            {isLoading ? "در حال ثبت نام..." : "ایجاد حساب"}
+            {isLoading ? "در حال ایجاد حساب..." : "ایجاد حساب"}
           </button>
         </form>
       </div>

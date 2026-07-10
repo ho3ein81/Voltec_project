@@ -110,8 +110,8 @@ export default function MyCompaniesPage() {
     if (value === "staff" || value === "employee" || value.includes("کارمند") || value.includes("عضو")) {
       return "کارمند / عضو";
     }
-    
-    return raw; // در صورت عدم تطبیق، مقدار اصلی را برگردان
+
+    return raw;
   };
 
   const getErrorMessage = (error: any): string => {
@@ -282,70 +282,81 @@ export default function MyCompaniesPage() {
       </div>
 
       <div className="space-y-4">
-        {companies.map((company: any) => {
-          const isActive = activeCompany?.id === company.id;
-          const name = getCompanyName(company);
-          const isLeaving = leavingId === company.id;
-          const roleLabel = getUserRoleLabel(company);
-          
-          const membersCount = membersCountMap[company.id];
-          const isCountLoading = loadingCounts[company.id];
+        {companies.length === 0 ? (
+          <Card className="p-6 text-center">
+            <div className="space-y-2">
+              <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
+                هنوز عضو هیچ شرکت یا گروهی نیستید
+              </h2>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                در حال حاضر هیچ شرکتی برای شما ثبت نشده است. برای ادامه، باید به یک شرکت دعوت شوید یا یک شرکت جدید ثبت کنید.
+              </p>
+            </div>
+          </Card>
+        ) : (
+          companies.map((company: any) => {
+            const isActive = activeCompany?.id === company.id;
+            const name = getCompanyName(company);
+            const isLeaving = leavingId === company.id;
+            const roleLabel = getUserRoleLabel(company);
 
-          return (
-            <Card key={company.id} className={`p-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between transition-colors ${isActive ? "border-[var(--brand)] bg-[var(--brand-soft)]/10" : "hover:border-[var(--brand-soft)]"}`}>
-              <div className="flex items-center gap-3">
-                <div className={`h-10 w-10 rounded-lg flex items-center justify-center shrink-0 ${isActive ? "bg-[var(--brand)] text-white" : "bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400"}`}>
-                  <Building2 className="h-5 w-5" />
-                </div>
-                <div className="min-w-0 space-y-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-semibold text-zinc-900 dark:text-zinc-100 truncate">{name}</span>
-                    {/* نمایش نقش با Badge آبی و استایل مدرن */}
-                    {roleLabel && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10 dark:bg-blue-900/30 dark:text-blue-400 dark:ring-blue-400/20">
-                        <Shield className="h-3 w-3" />
-                        {roleLabel}
-                      </span>
-                    )}
+            const membersCount = membersCountMap[company.id];
+            const isCountLoading = loadingCounts[company.id];
+
+            return (
+              <Card key={company.id} className={`p-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between transition-colors ${isActive ? "border-[var(--brand)] bg-[var(--brand-soft)]/10" : "hover:border-[var(--brand-soft)]"}`}>
+                <div className="flex items-center gap-3">
+                  <div className={`h-10 w-10 rounded-lg flex items-center justify-center shrink-0 ${isActive ? "bg-[var(--brand)] text-white" : "bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400"}`}>
+                    <Building2 className="h-5 w-5" />
                   </div>
-                  
-                  <div className="flex items-center gap-4 text-xs text-zinc-500 dark:text-zinc-400 flex-wrap">
-                    <span>شناسه عضویت: {company.id}</span>
-                    
-                    {/* نمایش تعداد اعضا */}
-                    <span className="flex items-center gap-1.5 border-r pr-4 border-zinc-200 dark:border-zinc-800">
-                      <Users className="h-3.5 w-3.5 text-zinc-400" />
-                      {isCountLoading ? (
-                        <span className="h-3 w-3 animate-spin rounded-full border border-zinc-400 border-t-transparent inline-block" />
-                      ) : (
-                        <span>
-                          {membersCount !== undefined ? `${membersCount} عضو` : "در حال دریافت..."}
+                  <div className="min-w-0 space-y-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-semibold text-zinc-900 dark:text-zinc-100 truncate">{name}</span>
+                      {roleLabel && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10 dark:bg-blue-900/30 dark:text-blue-400 dark:ring-blue-400/20">
+                          <Shield className="h-3 w-3" />
+                          {roleLabel}
                         </span>
                       )}
-                    </span>
+                    </div>
+
+                    <div className="flex items-center gap-4 text-xs text-zinc-500 dark:text-zinc-400 flex-wrap">
+                      <span>شناسه عضویت: {company.id}</span>
+
+                      <span className="flex items-center gap-1.5 border-r pr-4 border-zinc-200 dark:border-zinc-800">
+                        <Users className="h-3.5 w-3.5 text-zinc-400" />
+                        {isCountLoading ? (
+                          <span className="h-3 w-3 animate-spin rounded-full border border-zinc-400 border-t-transparent inline-block" />
+                        ) : (
+                          <span>
+                            {membersCount !== undefined ? `${membersCount} عضو` : "در حال دریافت..."}
+                          </span>
+                        )}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="flex items-center justify-end gap-3">
-                <Button variant="ghost" size="sm" onClick={() => handleLeaveCompany(company.id, name)} disabled={isLeaving} className="text-red-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/20">
-                  {isLeaving ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-red-500 border-t-transparent" /> : <LogOut className="h-4 w-4" />}
-                  خروج
-                </Button>
-                {isActive ? (
-                  <div className="h-8 w-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center dark:bg-emerald-950/30 dark:text-emerald-400">
-                    <Check className="h-4 w-4" />
-                  </div>
-                ) : (
-                  <Button variant="ghost" size="sm" onClick={() => handleSwitchCompany(company)}>
-                    <ArrowLeftRight className="h-4 w-4" />
-                    سوییچ
+                <div className="flex items-center justify-end gap-3">
+                  <Button variant="ghost" size="sm" onClick={() => handleLeaveCompany(company.id, name)} disabled={isLeaving} className="text-red-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/20">
+                    {isLeaving ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-red-500 border-t-transparent" /> : <LogOut className="h-4 w-4" />}
+                    خروج
                   </Button>
-                )}
-              </div>
-            </Card>
-          );
-        })}
+                  {isActive ? (
+                    <div className="h-8 w-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center dark:bg-emerald-950/30 dark:text-emerald-400">
+                      <Check className="h-4 w-4" />
+                    </div>
+                  ) : (
+                    <Button variant="ghost" size="sm" onClick={() => handleSwitchCompany(company)}>
+                      <ArrowLeftRight className="h-4 w-4" />
+                      سوییچ
+                    </Button>
+                  )}
+                </div>
+              </Card>
+            );
+          })
+        )}
       </div>
 
       {showTransferModal && (

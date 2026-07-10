@@ -18,7 +18,8 @@ type CompanyRequest = {
   created_at: string;
   company_name: string;
   type_company: string;
-  status: CompanyRequestStatus;
+  status: CompanyRequestStatus | string; // پذیرش وضعیت‌های فارسی یا انگلیسی
+  company_id?: number | null; // فیلد اضافه شده از بک‌اند
 };
 
 const COMPANY_REGISTRATION_ENDPOINT =
@@ -41,38 +42,35 @@ const COMPANY_TYPE_LABELS: Record<string, string> = {
 
 function getCompanyTypeLabel(type?: string | null) {
   if (!type) return "-";
-
   const normalizedType = String(type).trim().toLowerCase();
-
-  return COMPANY_TYPE_LABELS[normalizedType] ?? normalizedType;
+  return COMPANY_TYPE_LABELS[normalizedType] ?? type;
 }
 
 function getStatusMeta(status: string) {
-  switch (status) {
-    case "approved":
-      return {
-        label: "تایید شده",
-        className: "border-emerald-500/20 bg-emerald-500/10 text-emerald-500",
-      };
-
-    case "pending":
-      return {
-        label: "در انتظار",
-        className: "border-amber-500/20 bg-amber-500/10 text-amber-500",
-      };
-
-    case "rejected":
-      return {
-        label: "رد شده",
-        className: "border-red-500/20 bg-red-500/10 text-red-500",
-      };
-
-    default:
-      return {
-        label: status,
-        className: "border-gray-500/20 bg-gray-500/10 text-gray-500",
-      };
+  // مدیریت هر دو حالت فارسی (دریافت شده از بک‌اند) و انگلیسی
+  const normalized = status.trim();
+  if (normalized === "approved" || normalized === "تایید شده") {
+    return {
+      label: "تایید شده",
+      className: "border-emerald-500/20 bg-emerald-500/10 text-emerald-500",
+    };
   }
+  if (normalized === "pending" || normalized === "در حال بررسی" || normalized === "در انتظار") {
+    return {
+      label: "در حال بررسی",
+      className: "border-amber-500/20 bg-amber-500/10 text-amber-500",
+    };
+  }
+  if (normalized === "rejected" || normalized === "تایید نشده" || normalized === "رد شده") {
+    return {
+      label: "رد شده",
+      className: "border-red-500/20 bg-red-500/10 text-red-500",
+    };
+  }
+  return {
+    label: status,
+    className: "border-gray-500/20 bg-gray-500/10 text-gray-500",
+  };
 }
 
 function formatDate(date: string) {
@@ -82,23 +80,10 @@ function formatDate(date: string) {
 
 function getErrorMessage(error: any) {
   const status = error?.response?.status;
-
-  if (status === 401) {
-    return "نشست شما منقضی شده است. لطفاً دوباره وارد شوید.";
-  }
-
-  if (status === 403) {
-    return "شما دسترسی لازم برای مشاهده یا بروزرسانی درخواست‌های ثبت شرکت را ندارید. کاربر باید عضو گروه moderators باشد.";
-  }
-
-  if (status === 404) {
-    return "آدرس API مربوط به درخواست‌های ثبت شرکت پیدا نشد.";
-  }
-
-  if (error?.response?.data?.detail) {
-    return error.response.data.detail;
-  }
-
+  if (status === 401) return "نشست شما منقضی شده است. لطفاً دوباره وارد شوید.";
+  if (status === 403) return "شما دسترسی لازم برای مشاهده درخواست‌ها را ندارید. کاربر باید عضو گروه moderators باشد.";
+  if (status === 404) return "آدرس API مربوط به درخواست‌های ثبت شرکت پیدا نشد.";
+  if (error?.response?.data?.detail) return error.response.data.detail;
   return "خطا در ارتباط با سرور.";
 }
 
@@ -116,25 +101,16 @@ export default function AdminCompanyRequestsPage() {
       setErrorMessage(null);
 
       const accessToken = localStorage.getItem("access_token");
-
       if (!accessToken) {
         router.push("/login");
         return;
       }
 
       const res = await api.get(COMPANY_REGISTRATION_ENDPOINT);
-      const data = Array.isArray(res.data)
-        ? res.data
-        : (res.data?.results ?? []);
-
+      const data = Array.isArray(res.data) ? res.data : (res.data?.results ?? []);
       setCompanies(data);
     } catch (error: any) {
-      console.error("خطا در دریافت لیست درخواست‌های ثبت شرکت:", {
-        status: error?.response?.status,
-        data: error?.response?.data,
-        error,
-      });
-
+      console.error("خطا در دریافت لیست درخواست‌ها:", error);
       setErrorMessage(getErrorMessage(error));
     } finally {
       setLoading(false);
@@ -156,19 +132,13 @@ export default function AdminCompanyRequestsPage() {
       await api.patch(
         `${MODERATOR_COMPANY_REGISTRATION_ENDPOINT}${requestId}/`,
         {
-          operator:
-            status === CompanyRequestStatus.Approved ? "approve" : "reject",
+          operator: status === CompanyRequestStatus.Approved ? "approve" : "reject",
         },
       );
 
       await fetchData();
     } catch (error: any) {
-      console.error("خطا در بروزرسانی وضعیت درخواست:", {
-        status: error?.response?.status,
-        data: error?.response?.data,
-        error,
-      });
-
+      console.error("خطا در بروزرسانی وضعیت درخواست:", error);
       setErrorMessage(getErrorMessage(error));
     } finally {
       setUpdatingId(null);
@@ -178,7 +148,7 @@ export default function AdminCompanyRequestsPage() {
   if (loading) {
     return (
       <div className="flex h-64 items-center justify-center text-[var(--text-secondary)]">
-        <div className="animate-pulse">در حال بارگذاری اطلاعات...</div>
+        <div className="animate-pulse text-sm">در حال بارگذاری اطلاعات...</div>
       </div>
     );
   }
@@ -196,7 +166,7 @@ export default function AdminCompanyRequestsPage() {
         </div>
       )}
 
-      <Card>
+      <Card className="overflow-hidden border-[var(--border)] bg-[var(--surface)] shadow-sm">
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[900px] text-right text-sm">
@@ -206,7 +176,7 @@ export default function AdminCompanyRequestsPage() {
                   <th className="px-6 py-4 font-semibold">نوع حقوقی</th>
                   <th className="px-6 py-4 font-semibold">تاریخ ثبت درخواست</th>
                   <th className="px-6 py-4 font-semibold">وضعیت فعلی</th>
-                  <th className="px-6 py-4 font-semibold">عملیات</th>
+                  <th className="px-6 py-4 font-semibold">جزئیات</th>
                 </tr>
               </thead>
 
@@ -215,7 +185,12 @@ export default function AdminCompanyRequestsPage() {
                   companies.map((company) => {
                     const statusMeta = getStatusMeta(company.status);
                     const isUpdating = updatingId === company.id;
-                    const isPending = company.status === "pending";
+                    const isPending =
+                      company.status === "pending" ||
+                      company.status === "در حال بررسی";
+
+                    // برای بارگذاری جزئیات در صفحه ویرایش، همیشه از شناسه درخواست (company.id) استفاده می‌شود
+                    const targetId = company.id;
 
                     return (
                       <tr
@@ -245,7 +220,7 @@ export default function AdminCompanyRequestsPage() {
                         <td className="px-6 py-4">
                           <div className="flex flex-wrap items-center gap-3">
                             <Link
-                              href={`/admin/company-registration/${company.id}`}
+                              href={`/admin/company-registration/${targetId}`}
                               className="text-sm font-medium text-[var(--brand)] hover:underline"
                             >
                               بررسی جزئیات
@@ -262,7 +237,7 @@ export default function AdminCompanyRequestsPage() {
                               }
                               className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-500 transition hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-50"
                             >
-                              {isUpdating ? "در حال ثبت..." : "تایید"}
+                              {isUpdating ? "ثبت..." : "تایید"}
                             </button>
 
                             <button
@@ -276,7 +251,7 @@ export default function AdminCompanyRequestsPage() {
                               }
                               className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-1.5 text-xs font-medium text-red-500 transition hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-50"
                             >
-                              {isUpdating ? "در حال ثبت..." : "رد"}
+                              {isUpdating ? "ثبت..." : "رد"}
                             </button>
                           </div>
                         </td>

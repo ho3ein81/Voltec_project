@@ -15,15 +15,11 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isFocused, setIsFocused] = useState<string | null>(null);
 
-  const API_BASE_URL =
-    process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000/api";
-
   const LOGIN_PATH = process.env.NEXT_PUBLIC_LOGIN_PATH || "/accounts/login/";
 
   const buildLoginUrl = () => {
     const path = LOGIN_PATH.startsWith("/") ? LOGIN_PATH : `/${LOGIN_PATH}`;
-
-    return `${path}`;
+    return path;
   };
 
   const normalizeNationalId = (value: string) => {
@@ -46,41 +42,24 @@ export default function LoginPage() {
       return;
     }
 
-    const loginUrl = buildLoginUrl();
-
     try {
       setIsLoading(true);
 
-      const res = await api.post(loginUrl, {
+      const { data, status } = await api.post(buildLoginUrl(), {
         national_id: cleanedNationalId,
         password: password.trim(),
       });
 
-      let data: any = null;
-
-      try {
-        data = await res.data;
-      } catch {
-        data = null;
-      }
-
-      if (res.status !== 200) {
-        const backendMessage =
-          data?.detail ||
-          data?.error ||
-          data?.message ||
-          data?.non_field_errors?.[0] ||
-          "کد ملی یا رمز عبور نادرست است";
-
-        setError(backendMessage);
+      if (status !== 200) {
+        setError("کد ملی یا رمز عبور نادرست است");
         return;
       }
 
       const accessToken = data?.access;
       const refreshToken = data?.refresh;
-      const user_national_id = data?.user.national_id;
-      const first_name = data?.user.first_name;
-      const last_name = data?.user.last_name;
+      const userNationalId = data?.user?.national_id;
+      const firstName = data?.user?.first_name;
+      const lastName = data?.user?.last_name;
 
       if (!accessToken || !refreshToken) {
         setError("پاسخ سرور ناقص است؛ توکن‌ها دریافت نشدند");
@@ -89,15 +68,23 @@ export default function LoginPage() {
 
       localStorage.setItem("access_token", accessToken);
       localStorage.setItem("refresh_token", refreshToken);
-      localStorage.setItem("user_national_id", user_national_id);
-      localStorage.setItem("first_name", first_name);
-      localStorage.setItem("last_name", last_name);
-      window.dispatchEvent(new Event("storage"));
+      if (userNationalId) localStorage.setItem("user_national_id", userNationalId);
+      if (firstName) localStorage.setItem("first_name", firstName);
+      if (lastName) localStorage.setItem("last_name", lastName);
 
+      window.dispatchEvent(new Event("storage"));
       router.push("/dashboard");
-    } catch (err) {
+    } catch (err: any) {
       console.error("LOGIN_ERROR =>", err);
-      setError("ارتباط با سرور برقرار نشد");
+
+      const backendMessage =
+        err?.response?.data?.detail ||
+        err?.response?.data?.error ||
+        err?.response?.data?.message ||
+        err?.response?.data?.non_field_errors?.[0] ||
+        "کد ملی یا رمز عبور نادرست است";
+
+      setError(backendMessage);
     } finally {
       setIsLoading(false);
     }
@@ -152,7 +139,6 @@ export default function LoginPage() {
           onSubmit={handleSubmit}
           style={{ display: "flex", flexDirection: "column", gap: "20px" }}
         >
-          {/* national id */}
           <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
             <label htmlFor="national_id">کد ملی</label>
 
@@ -180,7 +166,6 @@ export default function LoginPage() {
             />
           </div>
 
-          {/* password */}
           <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
             <label htmlFor="password">رمز عبور</label>
 
@@ -253,22 +238,21 @@ export default function LoginPage() {
                 )}
               </button>
             </div>
-          </div>
 
-          {error && (
-            <div
-              style={{
-                borderRadius: "8px",
-                padding: "10px 14px",
-                background: "rgba(220,38,38,0.05)",
-                border: "1px solid var(--error)",
-                color: "var(--error)",
-                fontSize: "12px",
-              }}
-            >
-              {error}
-            </div>
-          )}
+            {error && (
+              <p
+                style={{
+                  margin: "4px 0 0 0",
+                  color: "var(--error)",
+                  fontSize: "12px",
+                  fontWeight: 500,
+                  textAlign: "right",
+                }}
+              >
+                {error}
+              </p>
+            )}
+          </div>
 
           <button
             type="submit"

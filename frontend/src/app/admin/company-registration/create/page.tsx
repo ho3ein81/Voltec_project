@@ -11,6 +11,7 @@ import {
 } from "@/app/components/ui/card";
 import { useRouter } from "next/navigation";
 import api from "../../../components/lib/api";
+import { AlertCircle } from "lucide-react";
 
 interface Province {
   id: number;
@@ -54,11 +55,71 @@ const fetchAllPaginated = async <T,>(url: string): Promise<T[]> => {
   return results;
 };
 
+// تابع کمکی برای ترجمه و شخصی‌سازی پیام‌های خطای سیستم به صورت کاملا حرفه‌ای
+const getLocalizedErrorMessage = (field: string, rawMessage: string): string => {
+  const msg = rawMessage.toLowerCase();
+  
+  // مدیریت خطاهای عمومی و درخواست‌های تکراری
+  if (field === "non_field_errors" || field === "detail") {
+    if (msg.includes("already exists") || msg.includes("duplicate") || msg.includes("تکراری")) {
+      return "یک درخواست ثبت فعال با این مشخصات قبلاً در سامانه ثبت شده و در حال بررسی است.";
+    }
+    if (msg.includes("permission") || msg.includes("authorized")) {
+      return "شما دسترسی لازم برای انجام این عملیات را ندارید.";
+    }
+  }
+
+  // مدیریت پیام‌های عمومی فیلدها
+  if (msg.includes("required") || msg.includes("این فیلد اجباری")) {
+    return "وارد کردن این فیلد الزامی است.";
+  }
+  if (msg.includes("null") || msg.includes("empty") || msg.includes("تهی")) {
+    return "مقدار وارد شده نمی‌تواند خالی باشد.";
+  }
+  if (msg.includes("invalid") || msg.includes("نامعتبر")) {
+    return "فرمت یا مقدار وارد شده نامعتبر است.";
+  }
+
+  // شخصی‌سازی خطاهای فیلد شناسه ملی
+  if (field === "company_national_id") {
+    if (msg.includes("length") || msg.includes("11")) {
+      return "شناسه ملی شرکت باید دقیقاً ۱۱ رقم و بدون حروف یا خط فاصله باشد.";
+    }
+    if (msg.includes("numeric") || msg.includes("number")) {
+      return "شناسه ملی فقط باید شامل اعداد باشد.";
+    }
+    if (msg.includes("exists") || msg.includes("تکراری")) {
+      return "شرکتی با این شناسه ملی قبلاً در سامانه ثبت شده یا درخواست آن در حال بررسی است.";
+    }
+  }
+
+  // شخصی‌سازی خطاهای فیلد شماره ثبت (جدید)
+  if (field === "company_registration_number") {
+    if (msg.includes("numeric") || msg.includes("number") || msg.includes("digits")) {
+      return "شماره ثبت شرکت باید فقط شامل ارقام عددی باشد.";
+    }
+    if (msg.includes("exists") || msg.includes("duplicate") || msg.includes("تکراری")) {
+      return "این شماره ثبت قبلاً برای شرکت دیگری ثبت شده است.";
+    }
+    if (msg.includes("length") || msg.includes("long") || msg.includes("short")) {
+      return "طول شماره ثبت وارد شده نامعتبر است.";
+    }
+  }
+
+  if (field === "company_province" || field === "company_city") {
+    return "لطفاً گزینه‌ای معتبر از لیست انتخاب کنید.";
+  }
+
+  // بازگرداندن پیام پیش‌فرض در صورت عدم تطبیق با الگوها
+  return rawMessage;
+};
+
 export default function CreateProjectPage() {
   const router = useRouter();
 
   const [provinces, setProvinces] = useState<Province[]>([]);
   const [cities, setCities] = useState<City[]>([]);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const [formData, setFormData] = useState({
     company_name: "",
@@ -70,7 +131,6 @@ export default function CreateProjectPage() {
     company_city: "",
   });
 
-  /* گرفتن استان ها */
   /* گرفتن استان ها */
   useEffect(() => {
     const fetchProvinces = async () => {
@@ -109,12 +169,26 @@ export default function CreateProjectPage() {
   ) => {
     const { name, value } = e.target;
 
+    if (errors[name]) {
+      setErrors((prev) => {
+        const updated = { ...prev };
+        delete updated[name];
+        return updated;
+      });
+    }
+
     if (name === "company_province") {
       setFormData((prev) => ({
         ...prev,
         company_province: value,
         company_city: "",
       }));
+
+      setErrors((prev) => {
+        const updated = { ...prev };
+        delete updated.company_city;
+        return updated;
+      });
 
       if (value) {
         fetchCities(value);
@@ -136,6 +210,7 @@ export default function CreateProjectPage() {
     e.preventDefault();
 
     const token = localStorage.getItem("access_token");
+    setErrors({});
 
     try {
       const res = await api.post(
@@ -146,12 +221,42 @@ export default function CreateProjectPage() {
       const data = await res.data;
       console.log("API Response:", data);
 
-     if (res.status !== 200) {
-  router.push("/dashboard/projects/user-list");
-}
-  
-    } catch (error) {
+      if (res.status !== 200) {
+        router.push("/dashboard/projects/user-list");
+      }
+    } catch (error: any) {
       console.error("Error:", error);
+
+      const backendData = error?.response?.data;
+      const parsedErrors: Record<string, string> = {};
+
+      if (backendData) {
+        if (typeof backendData === "object" && !Array.isArray(backendData)) {
+          Object.entries(backendData).forEach(([key, value]) => {
+            let rawMsg = "";
+            if (Array.isArray(value)) {
+              rawMsg = value.join(" ");
+            } else if (typeof value === "string") {
+              rawMsg = value;
+            } else {
+              rawMsg = "مقدار نامعتبر است";
+            }
+            
+            // اعمال مستقیم فیلتر ترجمه و شخصی‌سازی
+            parsedErrors[key] = getLocalizedErrorMessage(key, rawMsg);
+          });
+        } else if (Array.isArray(backendData)) {
+          const rawMsg = backendData.join(" ");
+          parsedErrors.non_field_errors = getLocalizedErrorMessage("non_field_errors", rawMsg);
+        } else if (typeof backendData === "string") {
+          parsedErrors.non_field_errors = getLocalizedErrorMessage("non_field_errors", backendData);
+        }
+      } else {
+        parsedErrors.non_field_errors =
+          "خطایی در ارتباط با سرور رخ داده است. لطفاً اتصال اینترنت خود را بررسی کرده و مجدداً تلاش کنید.";
+      }
+
+      setErrors(parsedErrors);
     }
   };
 
@@ -176,6 +281,13 @@ export default function CreateProjectPage() {
 
         <CardContent className="px-6 py-6 md:px-8 md:py-8">
           <form onSubmit={handleSubmit} className="space-y-7">
+            {(errors.non_field_errors || errors.detail) && (
+              <div className="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                <AlertCircle className="h-5 w-5 shrink-0" />
+                <span>{errors.non_field_errors || errors.detail}</span>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
               {/* نام شرکت */}
               <div className="space-y-2">
@@ -189,9 +301,19 @@ export default function CreateProjectPage() {
                   value={formData.company_name}
                   onChange={handleChange}
                   placeholder="مثلاً شرکت مهندسی ولتک"
-                  className="h-11 w-full rounded-xl border border-[var(--border)] bg-white px-4 text-sm text-[var(--text-primary)] outline-none transition-all placeholder:text-[var(--text-muted)] focus:border-[var(--brand)] focus:ring-4 focus:ring-[var(--brand-soft)]"
+                  className={`h-11 w-full rounded-xl border bg-white px-4 text-sm text-[var(--text-primary)] outline-none transition-all placeholder:text-[var(--text-muted)] focus:ring-4 ${
+                    errors.company_name
+                      ? "border-red-500 focus:border-red-500 focus:ring-red-500/20"
+                      : "border-[var(--border)] focus:border-[var(--brand)] focus:ring-[var(--brand-soft)]"
+                  }`}
                   required
                 />
+
+                {errors.company_name && (
+                  <p className="mr-1 text-xs font-medium text-red-600">
+                    {errors.company_name}
+                  </p>
+                )}
               </div>
 
               {/* شناسه ملی */}
@@ -206,9 +328,19 @@ export default function CreateProjectPage() {
                   value={formData.company_national_id}
                   onChange={handleChange}
                   placeholder="شناسه ملی ۱۱ رقمی شرکت را وارد کنید"
-                  className="h-11 w-full rounded-xl border border-[var(--border)] bg-white px-4 text-sm text-[var(--text-primary)] outline-none transition-all placeholder:text-[var(--text-muted)] focus:border-[var(--brand)] focus:ring-4 focus:ring-[var(--brand-soft)]"
+                  className={`h-11 w-full rounded-xl border bg-white px-4 text-sm text-[var(--text-primary)] outline-none transition-all placeholder:text-[var(--text-muted)] focus:ring-4 ${
+                    errors.company_national_id
+                      ? "border-red-500 focus:border-red-500 focus:ring-red-500/20"
+                      : "border-[var(--border)] focus:border-[var(--brand)] focus:ring-[var(--brand-soft)]"
+                  }`}
                   required
                 />
+
+                {errors.company_national_id && (
+                  <p className="mr-1 text-xs font-medium text-red-600">
+                    {errors.company_national_id}
+                  </p>
+                )}
               </div>
 
               {/* شماره ثبت */}
@@ -223,8 +355,18 @@ export default function CreateProjectPage() {
                   value={formData.company_registration_number}
                   onChange={handleChange}
                   placeholder="شماره ثبت شرکت"
-                  className="h-11 w-full rounded-xl border border-[var(--border)] bg-white px-4 text-sm text-[var(--text-primary)] outline-none transition-all placeholder:text-[var(--text-muted)] focus:border-[var(--brand)] focus:ring-4 focus:ring-[var(--brand-soft)]"
+                  className={`h-11 w-full rounded-xl border bg-white px-4 text-sm text-[var(--text-primary)] outline-none transition-all placeholder:text-[var(--text-muted)] focus:ring-4 ${
+                    errors.company_registration_number
+                      ? "border-red-500 focus:border-red-500 focus:ring-red-500/20"
+                      : "border-[var(--border)] focus:border-[var(--brand)] focus:ring-[var(--brand-soft)]"
+                  }`}
                 />
+
+                {errors.company_registration_number && (
+                  <p className="mr-1 text-xs font-medium text-red-600">
+                    {errors.company_registration_number}
+                  </p>
+                )}
               </div>
 
               {/* نوع شرکت */}
@@ -238,7 +380,11 @@ export default function CreateProjectPage() {
                   name="type_company"
                   value={formData.type_company}
                   onChange={handleChange}
-                  className="h-11 w-full rounded-xl border border-[var(--border)] bg-white px-4 text-sm text-[var(--text-primary)] outline-none transition-all focus:border-[var(--brand)] focus:ring-4 focus:ring-[var(--brand-soft)]"
+                  className={`h-11 w-full rounded-xl border bg-white px-4 text-sm text-[var(--text-primary)] outline-none transition-all focus:ring-4 ${
+                    errors.type_company
+                      ? "border-red-500 focus:border-red-500 focus:ring-red-500/20"
+                      : "border-[var(--border)] focus:border-[var(--brand)] focus:ring-[var(--brand-soft)]"
+                  }`}
                   required
                 >
                   <option value="">انتخاب کنید</option>
@@ -251,6 +397,12 @@ export default function CreateProjectPage() {
                   <option value="mixed_non_joint_stock">مختلط غیرسهامی</option>
                   <option value="cooperative">تعاونی</option>
                 </select>
+
+                {errors.type_company && (
+                  <p className="mr-1 text-xs font-medium text-red-600">
+                    {errors.type_company}
+                  </p>
+                )}
               </div>
 
               {/* استان */}
@@ -263,7 +415,11 @@ export default function CreateProjectPage() {
                   name="company_province"
                   value={formData.company_province}
                   onChange={handleChange}
-                  className="h-11 w-full rounded-xl border border-[var(--border)] bg-white px-4 text-sm text-[var(--text-primary)] outline-none transition-all focus:border-[var(--brand)] focus:ring-4 focus:ring-[var(--brand-soft)]"
+                  className={`h-11 w-full rounded-xl border bg-white px-4 text-sm text-[var(--text-primary)] outline-none transition-all focus:ring-4 ${
+                    errors.company_province
+                      ? "border-red-500 focus:border-red-500 focus:ring-red-500/20"
+                      : "border-[var(--border)] focus:border-[var(--brand)] focus:ring-[var(--brand-soft)]"
+                  }`}
                 >
                   <option value="">انتخاب استان</option>
 
@@ -273,6 +429,12 @@ export default function CreateProjectPage() {
                     </option>
                   ))}
                 </select>
+
+                {errors.company_province && (
+                  <p className="mr-1 text-xs font-medium text-red-600">
+                    {errors.company_province}
+                  </p>
+                )}
               </div>
 
               {/* شهر */}
@@ -286,7 +448,11 @@ export default function CreateProjectPage() {
                   value={formData.company_city}
                   onChange={handleChange}
                   disabled={!formData.company_province}
-                  className="h-11 w-full rounded-xl border border-[var(--border)] bg-white px-4 pl-20 text-sm text-[var(--text-primary)] outline-none transition-all disabled:cursor-not-allowed disabled:bg-[var(--surface-soft)] disabled:text-[var(--text-muted)] focus:border-[var(--brand)] focus:ring-4 focus:ring-[var(--brand-soft)]"
+                  className={`h-11 w-full rounded-xl border bg-white px-4 pl-20 text-sm text-[var(--text-primary)] outline-none transition-all disabled:cursor-not-allowed disabled:bg-[var(--surface-soft)] disabled:text-[var(--text-muted)] focus:ring-4 ${
+                    errors.company_city
+                      ? "border-red-500 focus:border-red-500 focus:ring-red-500/20"
+                      : "border-[var(--border)] focus:border-[var(--brand)] focus:ring-[var(--brand-soft)]"
+                  }`}
                 >
                   <option value="">
                     {formData.company_province
@@ -300,6 +466,12 @@ export default function CreateProjectPage() {
                     </option>
                   ))}
                 </select>
+
+                {errors.company_city && (
+                  <p className="mr-1 text-xs font-medium text-red-600">
+                    {errors.company_city}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -314,9 +486,19 @@ export default function CreateProjectPage() {
                 value={formData.company_description}
                 onChange={handleChange}
                 placeholder="توضیح کوتاهی درباره شرکت، حوزه فعالیت یا اطلاعات تکمیلی وارد کنید..."
-                className="min-h-32 w-full resize-none rounded-xl border border-[var(--border)] bg-white px-4 py-3 text-sm leading-7 text-[var(--text-primary)] outline-none transition-all placeholder:text-[var(--text-muted)] focus:border-[var(--brand)] focus:ring-4 focus:ring-[var(--brand-soft)]"
+                className={`min-h-32 w-full resize-none rounded-xl border bg-white px-4 py-3 text-sm leading-7 text-[var(--text-primary)] outline-none transition-all placeholder:text-[var(--text-muted)] focus:ring-4 ${
+                  errors.company_description
+                    ? "border-red-500 focus:border-red-500 focus:ring-red-500/20"
+                    : "border-[var(--border)] focus:border-[var(--brand)] focus:ring-[var(--brand-soft)]"
+                }`}
                 rows={4}
               />
+
+              {errors.company_description && (
+                <p className="mr-1 text-xs font-medium text-red-600">
+                  {errors.company_description}
+                </p>
+              )}
             </div>
 
             <div className="flex flex-col-reverse gap-3 border-t border-[var(--border)] pt-6 sm:flex-row sm:justify-end">

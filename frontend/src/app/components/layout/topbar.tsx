@@ -3,12 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Bell } from "lucide-react";
+import { Bell, Building2, KeyRound, UserRound, LogOut } from "lucide-react";
 
 import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
-import CompanySwitcher from "../company/company-switcher"
-
+import CompanySwitcher from "../company/company-switcher";
 
 export function Topbar() {
   const router = useRouter();
@@ -79,7 +78,6 @@ export function Topbar() {
 
   return (
     <header className="flex h-16 items-center justify-between border-b border-[var(--border)] bg-[var(--surface)] px-6 relative z-[200]">
-
       <div className="flex items-center gap-3">
         <h1 className="text-lg font-bold text-[var(--text-primary)]">
           داشبورد
@@ -87,9 +85,8 @@ export function Topbar() {
 
         <Badge variant="info">سیستم فعال</Badge>
         <div className="flex items-center gap-3">
-  <CompanySwitcher />
-</div>
-
+          <CompanySwitcher />
+        </div>
 
         {isAuthenticated && companyName && (
           <Badge className="bg-[var(--brand-soft)] text-black border border-[var(--brand)] font-medium px-2.5 py-0.5 rounded-md text-xs">
@@ -108,14 +105,11 @@ export function Topbar() {
             <div ref={menuRef} className="relative">
               <button
                 onClick={() => setOpenMenu(!openMenu)}
-                className="flex items-center gap-2 text-sm font-medium text-[var(--text-primary)] hover:text-[var(--brand)] transition"
+                className="flex min-w-[160px] items-center justify-between gap-2 text-sm font-medium text-[var(--text-primary)] hover:text-[var(--brand)] transition"
               >
-                {fullname}
-
+                <span className="truncate">{fullname}</span>
                 <svg
-                  className={`w-4 h-4 transition-transform ${
-                    openMenu ? "rotate-180" : ""
-                  }`}
+                  className={`h-4 w-4 transition-transform ${openMenu ? "rotate-180" : ""}`}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -131,17 +125,17 @@ export function Topbar() {
 
               {openMenu && (
                 <div
-                  className="absolute right-0 mt-3 w-44 rounded-lg shadow-lg border"
+                  className="absolute right-0 mt-3 w-52 overflow-hidden rounded-2xl border shadow-[0_20px_50px_-12px_rgba(0,0,0,0.15)] backdrop-blur-md"
                   style={{
                     background: "var(--surface)",
                     borderColor: "var(--border)",
                   }}
                 >
                   <ul className="py-2 text-sm">
-                    <li>
+                    <li className="px-2">
                       <Link
                         href="/dashboard/projects/user-list"
-                        className="block px-4 py-2 transition"
+                        className="flex items-center gap-3 rounded-xl px-4 py-2.5 font-medium transition-all duration-200"
                         style={{ color: "var(--text-primary)" }}
                         onMouseEnter={(e) =>
                           (e.currentTarget.style.background =
@@ -151,14 +145,19 @@ export function Topbar() {
                           (e.currentTarget.style.background = "transparent")
                         }
                       >
-                      ثبت شرکت‌های من 
+                        <Building2
+                          size={18}
+                          strokeWidth={2.25}
+                          color="currentColor"
+                        />
+                        <span>ثبت شرکت‌های من</span>
                       </Link>
                     </li>
 
-                    <li>
+                    <li className="px-2">
                       <Link
                         href="/dashboard/setting/team"
-                        className="block px-4 py-2 transition"
+                        className="flex items-center gap-3 rounded-xl px-4 py-2.5 font-medium transition-all duration-200"
                         style={{ color: "var(--text-primary)" }}
                         onMouseEnter={(e) =>
                           (e.currentTarget.style.background =
@@ -168,14 +167,19 @@ export function Topbar() {
                           (e.currentTarget.style.background = "transparent")
                         }
                       >
-                        مدیریت کد دعوت
+                        <KeyRound
+                          size={18}
+                          strokeWidth={2.25}
+                          color="currentColor"
+                        />
+                        <span>مدیریت کد دعوت</span>
                       </Link>
                     </li>
 
-                    <li>
+                    <li className="px-2">
                       <Link
                         href="/profile"
-                        className="block px-4 py-2 transition"
+                        className="flex items-center gap-3 rounded-xl px-4 py-2.5 font-medium transition-all duration-200"
                         style={{ color: "var(--text-primary)" }}
                         onMouseEnter={(e) =>
                           (e.currentTarget.style.background =
@@ -185,14 +189,24 @@ export function Topbar() {
                           (e.currentTarget.style.background = "transparent")
                         }
                       >
-                        پروفایل
+                        <UserRound
+                          size={18}
+                          strokeWidth={2.25}
+                          color="currentColor"
+                        />
+                        <span>پروفایل</span>
                       </Link>
                     </li>
 
-                    <li>
+                    <div
+                      className="my-1.5 h-px"
+                      style={{ backgroundColor: "var(--border)" }}
+                    />
+
+                    <li className="px-2">
                       <button
                         onClick={handleLogout}
-                        className="w-full text-right px-4 py-2 transition"
+                        className="flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-right font-medium transition-all duration-200"
                         style={{ color: "var(--error)" }}
                         onMouseEnter={(e) =>
                           (e.currentTarget.style.background =
@@ -202,7 +216,12 @@ export function Topbar() {
                           (e.currentTarget.style.background = "transparent")
                         }
                       >
-                        خروج
+                        <LogOut
+                          size={18}
+                          strokeWidth={2.25}
+                          color="currentColor"
+                        />
+                        <span>خروج</span>
                       </button>
                     </li>
                   </ul>

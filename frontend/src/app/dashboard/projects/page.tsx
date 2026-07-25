@@ -25,29 +25,35 @@ type APIProject = {
 };
 
 function getStatusMeta(status: string) {
-  // مدیریت وضعیت بر اساس لیبل‌های فارسی ریسپانس شما
-  switch (status) {
-    case "درحال انجام":
-    case "active":
+  const normalized = (status || "").toLowerCase().trim();
+
+  switch (normalized) {
+    case "completed":
+    case "تکمیل شده":
+    case "تکمیل‌شده":
       return {
-        label: "درحال انجام",
+        label: "تکمیل شده",
         className:
           "border-[color:var(--success)]/20 bg-[color:var(--success)]/10 text-[color:var(--success)]",
       };
-    case "در انتظار":
-    case "pending":
+
+    case "inprogress":
+    case "درحال انجام":
+    case "در حال انجام":
       return {
-        label: "در انتظار",
-        className:
-          "border-[color:var(--warning)]/20 bg-[color:var(--warning)]/10 text-[color:var(--warning)]",
-      };
-    case "تکمیل‌شده":
-    case "completed":
-      return {
-        label: "تکمیل‌شده",
+        label: "درحال انجام",
         className:
           "border-[color:var(--info)]/20 bg-[color:var(--info)]/10 text-[color:var(--info)]",
       };
+
+    case "suspension":
+    case "تعلیق":
+      return {
+        label: "تعلیق",
+        className:
+          "border-[color:var(--warning)]/20 bg-[color:var(--warning)]/10 text-[color:var(--warning)]",
+      };
+
     default:
       return {
         label: status || "نامشخص",
@@ -56,6 +62,7 @@ function getStatusMeta(status: string) {
       };
   }
 }
+
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("fa-IR").format(value);

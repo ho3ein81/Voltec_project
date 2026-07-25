@@ -29,6 +29,35 @@
   --sidebar-text: #e5e5e5;
   --sidebar-active-bg: #f5b700;
   --sidebar-active-text: #111111;
+  /* Health status tokens - business palette aligned with Voltec brand */
+--status-not-started: #64748b;
+--status-not-started-soft: #f8fafc;
+--status-not-started-border: #cbd5e1;
+
+--status-completed: #15803d;
+--status-completed-soft: #f0fdf4;
+--status-completed-border: #bbf7d0;
+
+--status-critical: #b91c1c;
+--status-critical-soft: #fef2f2;
+--status-critical-border: #fecaca;
+
+--status-warning: #b7791f;
+--status-warning-soft: #fffaf0;
+--status-warning-border: #f6d68a;
+
+--status-normal: #1d4ed8;
+--status-normal-soft: #eff6ff;
+--status-normal-border: #bfdbfe;
+
+--status-good: #0f766e;
+--status-good-soft: #f0fdfa;
+--status-good-border: #99f6e4;
+
+--status-excellent: #312e81;
+--status-excellent-soft: #eef2ff;
+--status-excellent-border: #c7d2fe;
+
 
   
 }
@@ -49,6 +78,7 @@ body {
   border-radius: 1rem !important; /* rounded-2xl */
   box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05) !important;
   font-family: inherit !important;
+   display: block !important;
 }
 
 /* هدر تقویم (ماه و سال) */
@@ -71,6 +101,7 @@ body {
   width: 28px !important;
   height: 28px !important;
   transition: all 0.2s !important;
+  
 }
 
 .rmdp-arrow-container:hover {

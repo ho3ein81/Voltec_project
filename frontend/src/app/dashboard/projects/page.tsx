@@ -80,6 +80,10 @@ function isSuspended(status: string) {
   return getStatusKind(status) === "suspended";
 }
 
+function isCompleted(status: string) {
+  return getStatusKind(status) === "completed";
+}
+
 function getStatusMeta(status: string) {
   const statusKind = getStatusKind(status);
 
@@ -88,14 +92,14 @@ function getStatusMeta(status: string) {
       return {
         label: "تکمیل شده",
         className:
-          "border-[color:var(--success)]/20 bg-[color:var(--success)]/10 text-[color:var(--success)]",
+          "border-[color:var(--info)]/20 bg-[color:var(--info)]/10 text-[color:var(--info)]",
       };
 
     case "in_progress":
       return {
         label: "فعال",
         className:
-          "border-[color:var(--info)]/20 bg-[color:var(--info)]/10 text-[color:var(--info)]",
+           "border-[color:var(--success)]/20 bg-[color:var(--success)]/10 text-[color:var(--success)]",
       };
 
     case "suspended":
@@ -297,6 +301,7 @@ export default function ProjectsPage() {
 
   const renderActionButtons = (project: APIProject) => {
     const suspended = isSuspended(project.status);
+    const completed = isCompleted(project.status);
     const isLoadingThisProject = actionLoadingId === project.id;
 
     return (
@@ -312,7 +317,7 @@ export default function ProjectsPage() {
           <Switch
             checked={!suspended}
             onChange={() => openStatusConfirm(project)}
-            disabled={isLoadingThisProject}
+            disabled={isLoadingThisProject || completed}
           />
 
           <div className="flex min-w-[88px] flex-col">
@@ -320,7 +325,11 @@ export default function ProjectsPage() {
               {suspended ? "بازگشایی" : "تعلیق"}
             </span>
 
-            {isLoadingThisProject ? (
+            {completed ? (
+              <span className="mt-1 text-[11px] text-[var(--success)]">
+                پروژه تکمیل شده
+              </span>
+            ) : isLoadingThisProject ? (
               <span className="mt-1 inline-flex items-center gap-1 text-[11px] text-[var(--text-secondary)]">
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 {suspended ? "در حال بازگشایی..." : "در حال تعلیق..."}
@@ -473,6 +482,7 @@ export default function ProjectsPage() {
                   const statusMeta = getStatusMeta(project.status);
                   const ownerFullName = getOwnerFullName(project);
                   const suspended = isSuspended(project.status);
+                  const completed = isCompleted(project.status);
                   const isLoadingThisProject = actionLoadingId === project.id;
 
                   return (
@@ -549,7 +559,7 @@ export default function ProjectsPage() {
                             <Switch
                               checked={!suspended}
                               onChange={() => openStatusConfirm(project)}
-                              disabled={isLoadingThisProject}
+                              disabled={isLoadingThisProject || completed}
                             />
 
                             <div className="flex min-w-[88px] flex-col">
@@ -557,7 +567,11 @@ export default function ProjectsPage() {
                                 {suspended ? "بازگشایی" : "تعلیق"}
                               </span>
 
-                              {isLoadingThisProject ? (
+                              {completed ? (
+                                <span className="mt-1 text-[11px] text-[var(--success)]">
+                                  پروژه تکمیل شده است
+                                </span>
+                              ) : isLoadingThisProject ? (
                                 <span className="mt-1 inline-flex items-center gap-1 text-[11px] text-[var(--text-secondary)]">
                                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
                                   {suspended

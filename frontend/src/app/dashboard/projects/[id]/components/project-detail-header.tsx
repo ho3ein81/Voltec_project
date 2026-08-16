@@ -26,7 +26,7 @@ export default function ProjectDetailHeader({
         return {
           label: "تکمیل شده",
           className:
-            "border-[var(--success)]/20 bg-[var(--success)]/10 text-[var(--success)]",
+            "border-[var(--info)]/20 bg-[var(--info)]/10 text-[var(--info)]",
         };
 
       case "inprogress":
@@ -37,7 +37,7 @@ export default function ProjectDetailHeader({
         return {
           label: "فعال",
           className:
-            "border-[var(--info)]/20 bg-[var(--info)]/10 text-[var(--info)]",
+            "border-[var(--success)]/20 bg-[var(--success)]/10 text-[var(--success)]",
         };
 
       case "suspension":

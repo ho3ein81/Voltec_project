@@ -34,9 +34,10 @@
 --status-not-started-soft: #f8fafc;
 --status-not-started-border: #cbd5e1;
 
---status-completed: #15803d;
---status-completed-soft: #f0fdf4;
---status-completed-border: #bbf7d0;
+--status-completed: #2563eb;
+--status-completed-soft: #eff6ff;
+--status-completed-border: #bfdbfe;
+
 
 --status-critical: #b91c1c;
 --status-critical-soft: #fef2f2;

@@ -130,9 +130,11 @@ export default function ProjectDetailsPage() {
       case "statements":
         return (
           <ProjectStatusPanel
-            joinId={Number(joinId)}
-            projectId={Number(projectId)}
-          />
+  joinId={joinId}
+  projectId={project.id}
+  projectStatus={project.status}
+/>
+
         );
 
       default:

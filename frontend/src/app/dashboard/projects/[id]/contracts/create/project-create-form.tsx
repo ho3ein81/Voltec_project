@@ -30,6 +30,7 @@ type ProjectResponse = {
   company_name?: string;
   company_national_id?: string;
   delivery_time?: string | number;
+  created_at?: string;
   owner_first_name?: string | null;
   owner_last_name?: string | null;
 };
@@ -388,7 +389,7 @@ export default function ContractCreateForm() {
     try {
       await api.post(`/contracts/${joinId}/${projectId}/`, payload);
       setSuccess("قرارداد با موفقیت ثبت شد.");
-      router.push(`/dashboard/projects/${projectId}/contracts/create`);
+        router.push(`/dashboard/projects/${projectId}`);
     } catch (err: any) {
       console.error("خطا در ثبت قرارداد:", err);
       setError(extractApiError(err));
@@ -487,7 +488,7 @@ export default function ContractCreateForm() {
         </div>
 
         {project ? (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid grid-cols-3 gap-3 md:gap-4 xl:gap-5">
             <InfoRow
               label="عنوان پروژه"
               value={project.title}
@@ -503,15 +504,7 @@ export default function ContractCreateForm() {
               value={project.employer}
               icon={<BriefcaseBusiness className="h-4 w-4" />}
             />
-            <InfoRow
-              label="بودجه"
-              value={
-                project.budget !== undefined && project.budget !== null
-                  ? `${formatToman(project.budget)} تومان`
-                  : "-"
-              }
-              icon={<Wallet className="h-4 w-4" />}
-            />
+
             <InfoRow
               label="نام شرکت"
               value={project.company_name}
@@ -523,11 +516,6 @@ export default function ContractCreateForm() {
               icon={<Landmark className="h-4 w-4" />}
             />
             <InfoRow
-              label="زمان تحویل"
-              value={convertToPersianDate(project.delivery_time)}
-              icon={<CalendarDays className="h-4 w-4" />}
-            />
-            <InfoRow
               label="مسئول پروژه"
               value={
                 `${project.owner_first_name ?? ""} ${
@@ -535,6 +523,25 @@ export default function ContractCreateForm() {
                 }`.trim() || "-"
               }
               icon={<ShieldCheck className="h-4 w-4" />}
+            />
+            <InfoRow
+              label="زمان شروع پروژه"
+              value={convertToPersianDate(project.created_at)}
+              icon={<CalendarDays className="h-4 w-4" />}
+            />
+            <InfoRow
+              label="زمان تحویل"
+              value={convertToPersianDate(project.delivery_time)}
+              icon={<CalendarDays className="h-4 w-4" />}
+            />
+            <InfoRow
+              label="بودجه"
+              value={
+                project.budget !== undefined && project.budget !== null
+                  ? `${formatToman(project.budget)} تومان`
+                  : "-"
+              }
+              icon={<Wallet className="h-4 w-4" />}
             />
           </div>
         ) : (
@@ -734,12 +741,12 @@ function InfoRow({
   icon?: React.ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)]/60 p-4 transition-all hover:bg-[var(--surface-soft)]">
-      <div className="flex items-center gap-2 text-[11px] font-bold text-[var(--text-muted)]">
-        <span className="text-[var(--brand-hover)]">{icon}</span>
-        <span>{label}</span>
+    <div className="min-w-0 rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)]/60 p-3 md:p-4 transition-all hover:bg-[var(--surface-soft)]">
+      <div className="flex items-center gap-2 text-[10px] md:text-[11px] font-bold text-[var(--text-muted)]">
+        <span className="shrink-0 text-[var(--brand-hover)]">{icon}</span>
+        <span className="truncate">{label}</span>
       </div>
-      <div className="mt-2 text-sm font-black text-[var(--text-primary)]">
+      <div className="mt-2 truncate text-xs md:text-sm font-black text-[var(--text-primary)]">
         {value ?? "-"}
       </div>
     </div>

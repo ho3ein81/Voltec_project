@@ -1,6 +1,6 @@
 # VOLTEC — SaaS Management System
 
-<badge>Currently Under Development</badge>
+**Currently Under Development**
 
 VOLTEC is a SaaS-based enterprise management system designed for the energy sector. The project is currently under development, with a focus on building a scalable, modular, and responsive platform for enterprise management and business workflows.
 
@@ -19,9 +19,25 @@ The application is being built around modular frontend architecture, reusable UI
 - **State Management** — Managing application state and interactive workflows.
 - **UI/UX Optimization** — Improving usability and interface consistency.
 
+## My Role & Contributions
+
+**Frontend Developer | Dashboard Development & UI/UX**
+
+I contribute to the frontend development of VOLTEC, focusing on building modular, responsive, and maintainable interfaces for an enterprise management platform.
+
+My contributions include:
+
+- Developing ERP dashboard interfaces and management modules.
+- Building reusable React components.
+- Contributing to the modular frontend architecture.
+- Integrating frontend interfaces with backend APIs.
+- Implementing responsive layouts for different screen sizes.
+- Managing application state and interactive workflows.
+- Improving UI consistency, usability, and maintainability.
+
 ## Tech Stack
 
-| Technology | Purpose |
+| **Technology** | **Purpose** |
 |---|---|
 | Next.js | React framework |
 | React | UI development |
@@ -29,22 +45,11 @@ The application is being built around modular frontend architecture, reusable UI
 | Shadcn/ui | UI components |
 | Tailwind CSS | Styling |
 
-## My Role
-
-**Frontend Developer**
-
-- Developing ERP dashboard interfaces.
-- Building reusable React components.
-- Structuring modular frontend architecture.
-- Integrating frontend interfaces with backend APIs.
-- Implementing responsive layouts.
-- Managing application state and interactive workflows.
-
 ## Project Status
 
 **Currently Under Development**
 
-VOLTEC is an ongoing project. Its features and modules are being developed progressively.
+VOLTEC is an ongoing project. Its features and modules are being developed progressively. The architecture and functionality may evolve as development continues.
 
 ## Author
 
